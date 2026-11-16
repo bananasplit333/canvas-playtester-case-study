@@ -1,0 +1,322 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Canvas Playtester</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column, a case-study narrative with a flow strip, a ledger table and three short field reports. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #17202c;
+  --muted: #566274;
+  --line: #d9dfe8;
+  --accent: #2b55c9;
+  --accent-soft: #e4ebfb;
+  --signal: #b8700f;
+  --signal-soft: #fbefdc;
+  --pass: #237a4b;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161e; --surface: #18202b; --ink: #e6ebf2; --muted: #9aa6b8; --line: #2a3442;
+    --accent: #84a4ff; --accent-soft: #1e2a45; --signal: #e8a64a; --signal-soft: #3a2a14; --pass: #5cc28a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161e; --surface: #18202b; --ink: #e6ebf2; --muted: #9aa6b8; --line: #2a3442;
+  --accent: #84a4ff; --accent-soft: #1e2a45; --signal: #e8a64a; --signal-soft: #3a2a14; --pass: #5cc28a;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 56px 80px; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2.1rem, 6vw, 3.2rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 60ch; }
+header { display: flex; flex-direction: column; gap: 18px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--mono); font-size: 0.8rem; color: var(--muted); padding-top: 14px; border-top: 1px solid var(--line); }
+.meta b { color: var(--ink); font-weight: 500; }
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+ul.plain li::marker { color: var(--accent); }
+.layers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.layer { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.layer .tag { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); }
+.layer p { font-size: 0.95rem; }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; font-family: var(--mono); font-size: 0.82rem; }
+.step { background: var(--accent-soft); color: var(--ink); border-radius: 4px; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; flex: 1 1 110px; min-width: 0; }
+.step span { color: var(--muted); font-size: 0.74rem; font-family: var(--body); }
+.step.fail { background: var(--signal-soft); }
+.arrow { align-self: center; color: var(--muted); }
+.note { font-size: 0.92rem; color: var(--muted); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { color: var(--muted); font-style: italic; width: 44%; }
+.reports { display: flex; flex-direction: column; gap: 14px; }
+.report { border-left: 3px solid var(--accent); padding: 4px 0 4px 18px; display: flex; flex-direction: column; gap: 6px; }
+.report .result { font-family: var(--mono); font-size: 0.82rem; color: var(--pass); }
+.checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
+.check { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.check b { font-weight: 600; }
+.check span { color: var(--muted); font-size: 0.93rem; }
+.lessons { counter-reset: l; display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.lessons li { display: flex; flex-direction: column; gap: 2px; }
+.lessons b { font-family: var(--display); font-weight: 500; font-size: 1.08rem; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); }
+figcaption { font-size: 0.85rem; color: var(--muted); }
+.log { margin: 0; overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; font-family: var(--mono); font-size: 0.76rem; line-height: 1.55; color: var(--ink); white-space: pre; }
+.log .c { color: var(--accent); }
+.log .d { color: var(--muted); }
+.log .ok { color: var(--pass); }
+.log .hl { background: var(--signal-soft); }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.fact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fact b { font-family: var(--display); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fact span { font-size: 0.88rem; color: var(--muted); }
+@media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+.stages { display: flex; flex-direction: column; gap: 22px; }
+.stage-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.stage-head h3 { font-size: 1.05rem; }
+.pill { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; }
+.pill.bad { background: var(--signal-soft); color: var(--signal); }
+.pill.good { background: var(--accent-soft); color: var(--pass); }
+.pill.neutral { background: var(--accent-soft); color: var(--accent); }
+figure video { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); background: var(--ink); }
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+@media (max-width: 640px) {
+  .layers, .checks { grid-template-columns: 1fr; }
+  .arrow { display: none; }
+  .wrap { gap: 44px; padding-block: 36px 60px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Claude Code case study</div>
+    <h1>Teaching Claude to play-test a canvas game</h1>
+    <p class="lede">At my studio, Claude Code could write game code but couldn't check its own work. I built a command-line tool, a Claude Code skill and a set of working rules so it can launch a game, play it the way a person does, measure what's on screen and show proof.</p>
+    <div class="meta">
+      <span><b>Role</b> sole author</span>
+      <span><b>Stack</b> Node, Chrome DevTools Protocol, PIXI.js</span>
+      <span><b>Scope</b> ~2,200 lines, ~35 commands</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="eyebrow">The problem</div>
+    <h2>The agent was working blind</h2>
+    <p>Our slot games draw everything into a single WebGL canvas. There are no buttons in the DOM, so a browser agent has nothing to select. In practice Claude would:</p>
+    <ul class="plain">
+      <li>click at pixel coordinates read off a screenshot. Slow, and it broke whenever the layout moved.</li>
+      <li>guess at art offsets. On one feature it rewrote the same offsets four times and missed every time, and I put my original numbers back.</li>
+      <li>hand the checking back to me: "can you send a screenshot?", "should this be bigger or smaller?"</li>
+    </ul>
+    <p>So I was still doing all the QA. The goal was to let the agent verify its own changes and give me evidence instead of questions.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">What I built</div>
+    <h2>Three layers, each with one job</h2>
+    <div class="layers">
+      <div class="layer">
+        <div class="tag">tool</div>
+        <h3>A game-driving CLI</h3>
+        <p>Controls Chrome over the DevTools Protocol and reads the game's PIXI scene graph directly. It finds things by visible text or component type, clicks with real mouse events, waits on real game state and records audio and console errors.</p>
+      </div>
+      <div class="layer">
+        <div class="tag">skill</div>
+        <h3>A verify skill</h3>
+        <p>Tells Claude when to verify (after any view, asset, animation or audio change) and how: build, launch, drive, assert, report. It also has a troubleshooting section that maps each known failure to its cause.</p>
+      </div>
+      <div class="layer">
+        <div class="tag">memory</div>
+        <h3>Rules from corrections</h3>
+        <p>Every time I corrected the agent, the correction became a written rule, and often a new command. That way the same mistake can't come back in the next session.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">The loop</div>
+    <h2>What Claude does after every change</h2>
+    <div class="flow" role="list">
+      <div class="step" role="listitem">static checks<span>assets, strings, audio wiring</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step" role="listitem">build + launch<span>real dev harness</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step" role="listitem">play<span>click, spin, wait for state</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step" role="listitem">measure<span>layout, audio order, errors</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="step fail" role="listitem">evidence<span>screenshot per finding</span></div>
+    </div>
+    <p class="note">Every check exits non-zero when something is wrong, so a failure stops the run and gets reported. It can't slip by unnoticed.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Corrections that became rules</div>
+    <h2>The skill grew from real mistakes</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What went wrong</th><th>What changed</th></tr></thead>
+        <tbody>
+          <tr><td>Clicking at screenshot coordinates was slow and flaky.</td><td>Rule: always drive games through the CLI. Clicks target scene nodes by text or type, never by pixel.</td></tr>
+          <tr><td>The agent asked me how big new art should be.</td><td>New measuring commands read each panel's real border from the art's transparency, then scale and center the element with even padding, and can write the result to config. Sizing stopped being a judgment call.</td></tr>
+          <tr><td>Long translated strings clipped in dialogs.</td><td>A language flag on launch, plus a saved test run that screenshots every dialog in the longest-text language, in both orientations.</td></tr>
+          <tr><td>Four guessed offset rewrites all missed.</td><td>Rule: read the real layout data first, make one informed change, then measure. No guessing again.</td></tr>
+          <tr><td>A background browser was left running after a quiet shutdown.</td><td>Rule: never silence the quit command, and confirm the debug port is actually closed.</td></tr>
+          <tr><td>Findings came back as a table I couldn't judge.</td><td>Rule: every visual failure comes with its own screenshot and a caption, because some flags are intended art and I make that call.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">A real run · 16 Nov 2026</div>
+    <h2>From a mockup to a placed splash screen</h2>
+    <p>The setup: a new splash screen has its frames and header in place and a design mockup to match. The panel content (two titles, the coin art, a description and the wild art) has been added to the config with no placement at all. Everything sits at native scale, piled on the center of its panel. Claude's job was to get from there to the mockup without anyone placing anything by hand.</p>
+    <p>Claude found that the existing <code>fit</code> command couldn't do this. It sizes one element against neighbors that are already placed, and here nothing was. So Claude added a <code>stack</code> command (about 40 lines) that lays out a whole panel from scratch, rather than placing the assets by hand.</p>
+    <div class="stages">
+      <figure>
+        <div class="stage-head"><h3>1 · The mockup</h3><span class="pill neutral">target</span></div>
+        <img src="panel-mockup.jpg" width="1360" height="412" alt="Mockup: Hold and Win panel with title, two coins and a two-line description; Wild Symbols panel with title and jaguar wild.">
+      </figure>
+      <figure>
+        <div class="stage-head"><h3>2 · Before: assets added, nothing placed</h3><span class="pill bad">layout exit 1 · 5 / 5 overlapping</span></div>
+        <img src="panel-before.jpg" width="1360" height="412" alt="Before: titles, coins, description and wild all stacked on top of each other in the middle of each panel.">
+      </figure>
+      <figure>
+        <div class="stage-head"><h3>3 · After: one stack command and a relaunch</h3><span class="pill good">layout exit 0</span></div>
+        <img src="panel-after.jpg" width="1360" height="412" alt="After: each panel laid out top to bottom with even gaps, matching the mockup.">
+      </figure>
+    </div>
+    <pre class="log"><span class="c">$ uge chrome --headed</span>
+<span class="c">$ uge resize 1920x1080</span>
+<span class="c">$ uge launch 2896 --keepSplash</span>
+<span class="d">launched 2896; splash left open</span>
+
+<span class="c">$ uge layout</span>
+splashFrame #1  inner 437.3x276.7
+name               box                      gapAbove  gapBelow  issues
+splashCoins        -9.3,315.3..349.3,468    60.7      <span class="hl">-100</span>      <span class="hl">OVERLAP</span>
+IDS_HAW_DESC       -34.7,368..373.3,422     <span class="hl">-100</span>      <span class="hl">-43.3</span>     <span class="hl">OVERLAP</span>
+IDS_HOLD_AND_WIN   86.7,378.7..251.3,408    <span class="hl">-43.3</span>     123.3     <span class="hl">OVERLAP</span>
+splashFrame #5  inner 437.3x276.7
+splashWild         684.7,272..892,507.3     17.3      <span class="hl">-128</span>      <span class="hl">OVERLAP</span>
+IDS_WILD_SYMBOLS   686.7,379.3..891.3,406.7 <span class="hl">-128</span>      124.7     <span class="hl">OVERLAP</span>
+<span class="hl">exit 1</span>
+
+<span class="c">$ uge stack --write</span>
+splashFrame #1 (landscape)  3 items, gap 11.1
+name               before      after
+IDS_HOLD_AND_WIN   330,393 x1  331,280 x0.984
+splashCoins        330,393 x1  330,382 x0.984
+IDS_HAW_DESC       330,393 x1  331,492 x0.984
+splashFrame #5 (landscape)  2 items, gap 11.1
+IDS_WILD_SYMBOLS   950,393 x1  951,278 x0.927
+splashWild         950,393 x1  952,414 x0.927
+<span class="d">wrote 3 copies of the splash config</span>
+
+<span class="c">$ uge launch 2896 --keepSplash</span>
+<span class="c">$ uge layout</span>
+splashFrame #1  inner 437.3x276.7
+name               gapAbove  gapBelow  dx    issues
+IDS_HOLD_AND_WIN   11.3      10.7      0
+splashCoins        10.7      11.3      0
+IDS_HAW_DESC       11.3      11.3      0.7
+splashFrame #5  inner 437.3x276.7
+IDS_WILD_SYMBOLS   10.7      11.3      0
+splashWild         11.3      11.3      0.7
+<span class="ok">exit 0 (nothing OUTSIDE, OVERLAPPING or OFF-CENTER)</span>
+<span class="c">$ uge errors</span>
+<span class="ok">no errors</span></pre>
+    <div class="facts">
+      <div class="fact"><b>5 → 0</b><span>overlapping elements</span></div>
+      <div class="fact"><b>10.7–11.3</b><span>every gap, in page units, in both panels</span></div>
+      <div class="fact"><b>≤ 0.7</b><span>units off-center for every element</span></div>
+    </div>
+    <p class="note">The stack command orders elements by config order, gives them one shared scale (capped by panel width) and spaces them evenly. It is not pixel-identical to the mockup: the even-gap rule made the coins about 9% larger than the hand-tuned version. This was a landscape-only demo. Afterwards the original configs were restored and checked against their original hashes. The log is trimmed for width, with long names shortened and some columns dropped.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">A feature test · 16 Nov 2026</div>
+    <h2>Buying the bonus and entering Hold &amp; Win</h2>
+    <p>Claude played into a feature the same way a player would. It clicked the bonus buy button, confirmed the purchase, dismissed the feature intro and let the first Hold &amp; Win respins play out. Each step waits for the real on-screen state before moving on. The video below is a recording of that run, captured by the tool itself, with no edits.</p>
+    <p>The CLI had no way to record video, so Claude added a <code>record</code> command. It captures the page's own frames over the DevTools Protocol while another command runs, and encodes them to MP4.</p>
+    <figure>
+      <video src="haw-feature.mp4" poster="haw-poster.jpg" width="1280" height="720" controls muted playsinline preload="metadata"></video>
+      <figcaption>28 seconds, 1280×720. Demo backend, play money. Recorded while the journey below ran.</figcaption>
+    </figure>
+    <pre class="log"><span class="c">$ uge launch 2896</span>
+<span class="c">$ uge record haw.mp4 --run="journey haw-start.txt"</span>
+[2/10] click --kind=SlotBonusBuyButtonView
+<span class="d">clicked "SlotBonusBuyButtonView" at 1710.5,787.5</span>
+[3/10] wait IDS_CONFIRM_SIMPLE
+<span class="d">"IDS_CONFIRM_SIMPLE" visible after 244ms</span>
+[5/10] click IDS_CONFIRM_SIMPLE
+<span class="d">clicked "Confirm" at 1138,845.5</span>
+[6/10] wait IDS_BUTTON_CONTINUE --timeout=40000
+<span class="d">"IDS_BUTTON_CONTINUE" visible after 8457ms</span>
+[8/10] click IDS_BUTTON_CONTINUE
+<span class="d">clicked "Continue" at 960,801</span>
+[9/10] sleep 12
+[10/10] errors
+<span class="ok">no errors</span>
+
+<span class="ok">journey passed: 10 steps in 28s</span>
+<span class="d">802 frames, 28.4s -> haw.mp4</span></pre>
+    <p class="note">The clicks target the bonus buy button by its component type and the dialog buttons by their text, then fire real mouse events at those points. None of the coordinates were written by hand. The recording stops during the respins to keep it short. After recording, Claude played the rest of the feature through to the win screen off camera and checked again for console errors, so the next session doesn't resume halfway through the feature. The <code>sleep</code> steps exist only to make the video easy to follow.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">In use</div>
+    <h2>Three example runs</h2>
+    <div class="reports">
+      <div class="report">
+        <h3>Swapping splash-screen art</h3>
+        <p>New art was a different size from the old. Before, this meant several rounds of me eyeballing it. Now Claude measures the panel, fits the art and writes the numbers for landscape and portrait, then re-measures until nothing is outside, overlapping or off-center.</p>
+        <div class="result">result: layout check exits 0 in both orientations</div>
+      </div>
+      <div class="report">
+        <h3>Checking win highlights</h3>
+        <p>The tool plays each win and scatter highlight one cell at a time. It renders the frame with and without the highlight and compares the pixels, so it measures what actually lands on screen, layering included. It caught a scatter effect covering its own symbol and sent me the screenshot to decide on.</p>
+        <div class="result">result: per-cell pass/fail table plus a fail screenshot per cell</div>
+      </div>
+      <div class="report">
+        <h3>Bonus feature audio</h3>
+        <p>A saved run buys the bonus feature through the real UI and plays it out. It then checks that sounds played and stopped in the expected order, and that no console errors appeared.</p>
+        <div class="result">result: audio-order assertion + zero new errors</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">How I know it works</div>
+    <h2>Guardrails against false passes</h2>
+    <div class="checks">
+      <div class="check"><b>Player path only</b><span>Clicks are real mouse events. The skill forbids using script injection to fake an outcome.</span></div>
+      <div class="check"><b>Fail fast</b><span>Saved runs stop at the first failing step, and each step's command and output go in the report.</span></div>
+      <div class="check"><b>No weakening tests</b><span>If a run fails because of the backend or test data, the agent reports it. It may not loosen the check to make it pass.</span></div>
+      <div class="check"><b>Leak checks done right</b><span>Memory compares round two against round one, since round one is when assets load for the first time.</span></div>
+      <div class="check"><b>Stale build detection</b><span>The skill checks which files the page actually loaded, so a stale build can't pass as a fix.</span></div>
+      <div class="check"><b>Errors close every run</b><span>A visual pass that logs a new console error counts as a failure.</span></div>
+    </div>
+  </section>
+
+  <footer>Source code and internal services are left out on purpose. The work belongs to my employer, so this page describes what was built and how it was checked, without the implementation.</footer>
+</div>
+
+</body></html>
